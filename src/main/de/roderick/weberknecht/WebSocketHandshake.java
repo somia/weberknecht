@@ -18,10 +18,8 @@ package de.roderick.weberknecht;
 
 import java.net.URI;
 import java.util.HashMap;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.apache.commons.codec.binary.Base64;
 
 
 public class WebSocketHandshake
@@ -95,7 +93,7 @@ public class WebSocketHandshake
 		for (int i = 0; i < 16; i++) {
 			nonce[i] = (byte) rand(0, 255);
 		}
-		return Base64.encodeBase64String(nonce);
+		return Base64.encodeBytes(nonce);
 	}
 
 	public void verifyServerStatusLine(String statusLine)
