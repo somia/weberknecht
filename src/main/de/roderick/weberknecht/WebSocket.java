@@ -16,6 +16,8 @@
 
 package de.roderick.weberknecht;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -28,8 +30,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLSocketFactory;
 
 
 public class WebSocket
@@ -234,9 +234,12 @@ public class WebSocket
 			receiver.stopit();
 		}
 
-		closeStreams();
+		try {
+			closeStreams();
 
-		eventHandler.onClose();
+		} finally {
+			eventHandler.onClose();
+		}
 	}
 
 	private synchronized void sendCloseHandshake() throws WebSocketException
