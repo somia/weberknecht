@@ -16,12 +16,12 @@
 
 package de.roderick.weberknecht;
 
-import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.URI;
 import java.net.UnknownHostException;
@@ -85,12 +85,17 @@ public class WebSocket
 
 	public void connect() throws WebSocketException
 	{
+		connect(0);
+	}
+
+	public void connect(int timeout) throws WebSocketException
+	{
 		try {
 			if (connected) {
 				throw new WebSocketException("already connected");
 			}
 
-			socket = createSocket();
+			socket = createSocket(timeout);
 			input = new DataInputStream(socket.getInputStream());
 			output = new PrintStream(socket.getOutputStream());
 
@@ -262,7 +267,7 @@ public class WebSocket
 		connected = false;
 	}
 
-	private Socket createSocket() throws WebSocketException
+	private Socket createSocket(int timeout) throws WebSocketException
 	{
 		String scheme = url.getScheme();
 		String host = url.getHost();
@@ -275,7 +280,8 @@ public class WebSocket
 				port = 80;
 			}
 			try {
-				socket = new Socket(host, port);
+				socket = new Socket();
+				socket.connect(new InetSocketAddress(host, port), timeout);
 			} catch (UnknownHostException uhe) {
 				throw new WebSocketException("unknown host: " + host, uhe);
 			} catch (IOException ioe) {
@@ -286,8 +292,11 @@ public class WebSocket
 				port = 443;
 			}
 			try {
-				SocketFactory factory = SSLSocketFactory.getDefault();
-				socket = factory.createSocket(host, port);
+				socket = new Socket();
+				socket.connect(new InetSocketAddress(host, port), timeout);
+
+				SSLSocketFactory factory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+				socket = factory.createSocket(socket, host, port, true);
 			} catch (UnknownHostException uhe) {
 				throw new WebSocketException("unknown host: " + host, uhe);
 			} catch (IOException ioe) {
