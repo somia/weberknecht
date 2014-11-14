@@ -42,10 +42,14 @@ public class WebSocketReceiver extends Thread
 	{
 		List<Byte> messageBytes = new ArrayList<Byte>();
 
+		// https://tools.ietf.org/html/rfc6455#section-5.1
+
 		while (!stop) {
 			try {
 				byte b = input.readByte();
 				byte opcode = (byte) (b & 0xf);
+				boolean control_frame = (opcode & 0x8) != 0;
+				boolean fin = b < 0;
 				byte length = input.readByte();
 				long payload_length = 0;
 				if (length < 126) {
@@ -58,13 +62,21 @@ public class WebSocketReceiver extends Thread
 					// TODO: add Limit for WebSocket Payload Length.
 					payload_length = input.readLong();
 				}
-				for (int i = 0; i < payload_length; i++) {
-					messageBytes.add(input.readByte());
+
+				if (control_frame) {
+					input.skipBytes((int)payload_length);
+				} else {
+					for (int i = 0; i < payload_length; i++) {
+						messageBytes.add(input.readByte());
+					}
 				}
-				Byte[] message = messageBytes.toArray(new Byte[messageBytes.size()]);
-				WebSocketMessage ws_message = new WebSocketMessage(message);
-				eventHandler.onMessage(ws_message);
-				messageBytes.clear();
+
+				if (fin) {
+					Byte[] message = messageBytes.toArray(new Byte[messageBytes.size()]);
+					WebSocketMessage ws_message = new WebSocketMessage(message);
+					eventHandler.onMessage(ws_message);
+					messageBytes.clear();
+				}
 			} catch (IOException ioe) {
 				handleError();
 			}
